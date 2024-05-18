@@ -1,19 +1,43 @@
+use crate::{error::SbusError, packet::SbusPacket, parser::SBUS_FRAME_LENGTH, Parser};
 use embedded_io::Read;
-use crate::channels_parsing;
-use crate::error::SbusError;
-use crate::packet::SbusPacket;
-use crate::parser::{SBUS_FOOTER, SBUS_FRAME_LENGTH, SBUS_HEADER};
+
+pub struct Blocking {}
+impl super::Mode for Blocking {}
+impl super::Sealed for Blocking {}
+
+impl<R, M> Parser<R, M>
+where
+    M: super::Mode,
+{
+    pub fn new_blocking<R1: Read>(reader: R1) -> Parser<R1, Blocking> {
+        Parser {
+            reader,
+            _mode: Default::default(),
+        }
+    }
+}
+
+impl<R: Read> Parser<R, Blocking> {
+    pub fn read_frame(&mut self) -> Result<SbusPacket, SbusError> {
+        let mut buffer = [0u8; SBUS_FRAME_LENGTH];
+        self.reader
+            .read_exact(&mut buffer)
+            .map_err(|_| SbusError::ReadError)?;
+
+        SbusPacket::from_array(&buffer)
+    }
+}
 
 pub struct SbusParser<R>
-    where
-        R: Read,
+where
+    R: Read,
 {
     reader: R,
 }
 
-impl<'a, R> SbusParser<R>
-    where
-        R: Read,
+impl<R> SbusParser<R>
+where
+    R: Read,
 {
     pub fn new(reader: R) -> Self {
         Self { reader }
@@ -21,34 +45,19 @@ impl<'a, R> SbusParser<R>
 
     pub fn read_frame(&mut self) -> Result<SbusPacket, SbusError> {
         let mut buffer = [0u8; SBUS_FRAME_LENGTH];
-        self.reader.read_exact(&mut buffer).map_err(|_| SbusError::ReadError)?;
+        self.reader
+            .read_exact(&mut buffer)
+            .map_err(|_| SbusError::ReadError)?;
 
-        // Check header and footer
-        if buffer[0] != SBUS_HEADER || buffer[SBUS_FRAME_LENGTH - 1] != SBUS_FOOTER {
-            return Err(SbusError::InvalidHeader);
-        }
-
-        // Parse channels and flags
-        let channels = channels_parsing(&buffer);
-
-        let flag_byte = buffer[23];
-        let packet = SbusPacket {
-            channels,
-            d1: (flag_byte & (1 << 0)) != 0,
-            d2: (flag_byte & (1 << 1)) != 0,
-            frame_lost: (flag_byte & (1 << 2)) != 0,
-            failsafe: (flag_byte & (1 << 3)) != 0,
-        };
-
-        Ok(packet)
+        SbusPacket::from_array(&buffer)
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::Cursor;
     use embedded_io_adapters::std::FromStd;
+    use std::io::Cursor;
 
     const TEST_PACKET: [u8; 25] = [
         0x0F, // HEAD_BYTE
@@ -82,30 +91,26 @@ mod tests {
     fn test_valid_sbus_frame() {
         // Simulate a valid SBUS frame
         let data = [
-            0x0F,  // Header
+            0x0F, // Header
             0x00, 0x00, // Channel 1 (bits 0-10)
             0x00, 0x00, // Channel 2 (bits 0-10)
             // Remaining channels omitted for brevity, but should be similar
             // Ensure to simulate all 16 channels and the flags byte
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00,  // Flags
-            0x00   // Footer
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Flags
+            0x00, // Footer
         ];
         let cursor = Cursor::new(data);
         let mut parser = SbusParser::new(FromStd::new(cursor));
 
-        let result = parser.read_frame();
-        assert!(result.is_ok());
+        let packet = parser.read_frame().expect("Should be a valid frame");
 
-        let packet = result.unwrap();
         assert_eq!(packet.channels[0], 0);
         assert_eq!(packet.channels[15], 0);
-        assert!(!packet.d1);
-        assert!(!packet.d2);
-        assert!(!packet.frame_lost);
-        assert!(!packet.failsafe);
+        assert!(!packet.flags.d1);
+        assert!(!packet.flags.d2);
+        assert!(!packet.flags.frame_lost);
+        assert!(!packet.flags.failsafe);
     }
 
     #[test]
@@ -113,12 +118,12 @@ mod tests {
         // Simulate a frame with an invalid header
         let mut data = TEST_PACKET;
         data[0] = 0x00; // Invalid header
-        
+
         let cursor = Cursor::new(data);
         let mut parser = SbusParser::new(FromStd::new(cursor));
 
         let result = parser.read_frame();
-        assert!(matches!(result, Err(SbusError::InvalidHeader)));
+        assert!(matches!(result, Err(SbusError::InvalidHeader(0x00))));
     }
 
     #[test]
@@ -130,7 +135,7 @@ mod tests {
         let mut parser = SbusParser::new(FromStd::new(cursor));
 
         let result = parser.read_frame();
-        assert!(matches!(result, Err(SbusError::InvalidHeader)));
+        assert!(matches!(result, Err(SbusError::InvalidFooter(0xFF))));
     }
 
     #[test]
@@ -144,10 +149,10 @@ mod tests {
         let result = parser.read_frame();
         assert!(result.is_ok());
         let packet = result.unwrap();
-        assert!(packet.d1);
-        assert!(packet.d2);
-        assert!(packet.frame_lost);
-        assert!(packet.failsafe);
+        assert!(packet.flags.d1);
+        assert!(packet.flags.d2);
+        assert!(packet.flags.frame_lost);
+        assert!(packet.flags.failsafe);
     }
 
     #[test]
@@ -164,23 +169,23 @@ mod tests {
     #[test]
     fn test_channel_decoding() {
         let mut data = [0u8; 25];
-        data[0] = 0x0F; // Header 
-        // Channel 1 set to 0
+        data[0] = 0x0F; // Header
+                        // Channel 1 set to 0
         data[1] = 0;
-        data[2] = 0; 
+        data[2] = 0;
         // Channel 2 set to 2047, needs to correctly span bytes 2, 3, and 4
         data[2] |= (2047 << 3) as u8; // Start from bit 3 of byte 2
         data[3] = ((2047 >> 5) & 0xFF) as u8; // Next full byte
         data[4] = ((2047 >> 5) & 0x07) as u8; // Last few bits that fit into byte 4
         data[24] = 0x00; // Footer
-        
+
         let cursor = Cursor::new(data);
         let mut parser = SbusParser::new(FromStd::new(cursor));
 
         let result = parser.read_frame();
         assert!(result.is_ok());
         let packet = result.unwrap();
-        assert_eq!(packet.channels[0], 0);  // Channel 1 should be 0
-        assert_eq!(packet.channels[1], 2047);  // Channel 2 should be 2047
+        assert_eq!(packet.channels[0], 0); // Channel 1 should be 0
+        assert_eq!(packet.channels[1], 2047); // Channel 2 should be 2047
     }
 }
