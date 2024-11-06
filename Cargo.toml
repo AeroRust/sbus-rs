@@ -11,7 +11,7 @@ embedded-io = { version = "0.6.1", optional = true }
 embedded-io-async = { version = "0.6.1", optional = true }
 
 [dev-dependencies]
-tokio = { version = "1.37.0", features = ["full"] }
+tokio = { version = "1.41.0", features = ["full"] }
 embedded-io-adapters = { version = "0.6.1" }
 criterion = "0.5"
 hex-literal = "0.4"
