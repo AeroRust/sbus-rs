@@ -1,8 +1,0 @@
-# Seeds for failure cases proptest has generated in the past. It is
-# automatically read and these particular cases re-run before any
-# novel cases are generated.
-#
-# It is recommended to check this file in to source control so that
-# everyone who runs the test benefits from these saved cases.
-cc ee751fc4ee953c5efb0b46e17aeea809eedb8001c17e38db59cd10c70f5c1c3e # shrinks to channel_idx = 0, value = 256
-cc 2636e7f9c773a5abb7a3f1992da93914d7262ca7e11e4fe5cbfcdef2df1e2cdb # shrinks to channels = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8], flags = 0
