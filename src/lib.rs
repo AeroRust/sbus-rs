@@ -40,8 +40,6 @@
 //! - 1 byte of flags
 //! - End byte (0x00)
 
-extern crate alloc;
-
 pub use error::*;
 pub use packet::*;
 pub use parser::*;

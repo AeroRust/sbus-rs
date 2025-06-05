@@ -193,6 +193,7 @@ impl<'a> Iterator for StreamingIterator<'a> {
 mod tests {
     use super::*;
     use crate::{pack_channels, CHANNEL_COUNT, CHANNEL_MAX};
+    extern crate alloc;
     use alloc::vec::Vec;
 
     fn create_test_frame(channels: &[u16; CHANNEL_COUNT], flags: u8) -> [u8; SBUS_FRAME_LENGTH] {
