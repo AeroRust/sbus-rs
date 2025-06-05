@@ -1,4 +1,5 @@
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
+use std::hint::black_box;
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use embedded_io_adapters::std::FromStd;
 use sbus_rs::{
     pack_channels, SbusPacket, SbusParser, CHANNEL_COUNT, CHANNEL_MAX, SBUS_FOOTER,
