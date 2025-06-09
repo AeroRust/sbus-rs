@@ -34,7 +34,7 @@ embedded-io-adapters = { version = "0.6" }
 criterion = "0.5"
 arbitrary = { version = "1.4.0", features = ["derive"] }
 libfuzzer-sys = "0.4"
-proptest = "1.6"
+proptest = "1.7"
 
 [features]
 default = ["blocking"]
