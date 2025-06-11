@@ -373,4 +373,32 @@ mod tests {
         assert!(stats.sync_losses >= 1); // At least one from corrupted frame
         assert!(stats.bytes_discarded >= garbage.len() as u32);
     }
+
+    #[test]
+    fn test_handling_invalid_footer() {
+        let mut parser = StreamingParser::new();
+        let mut frame = create_test_frame(&[1000; CHANNEL_COUNT], 0);
+        frame[SBUS_FRAME_LENGTH - 1] = 0xFF; // corrupt footer (not SBUS_FOOTER)
+
+        // The parser should discard the frame and not return any packets
+        let results: Vec<_> = parser.push_bytes(&frame).collect();
+        assert_eq!(results.len(), 0);
+
+        // Verify that sync_losses was incremented
+        assert_eq!(parser.stats().sync_losses, 1);
+    }
+
+    #[test]
+    fn test_handling_invalid_header() {
+        let mut parser = StreamingParser::new();
+        let mut frame = create_test_frame(&[1000; CHANNEL_COUNT], 0);
+        frame[0] = 0x00; // corrupt header (not SBUS_HEADER)
+
+        // The parser should discard the frame and not return any packets
+        let results: Vec<_> = parser.push_bytes(&frame).collect();
+        assert_eq!(results.len(), 0);
+
+        // Verify that bytes_discarded was incremented
+        assert!(parser.stats().bytes_discarded > 0);
+    }
 }

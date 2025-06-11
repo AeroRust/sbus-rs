@@ -267,3 +267,82 @@ fn test_streaming_channel_encoding_compatibility() {
         assert_eq!(packets[0].channels, pattern);
     }
 }
+
+/// Test error propagation in the iterator
+#[test]
+fn test_streaming_iterator_error_propagation() {
+    // Create a struct that wraps StreamingParser and overrides push_byte to return an error
+    struct ErrorStreamingParser {
+        inner: StreamingParser,
+        error_on_byte: u8,
+    }
+
+    impl ErrorStreamingParser {
+        fn new(error_on_byte: u8) -> Self {
+            Self {
+                inner: StreamingParser::new(),
+                error_on_byte,
+            }
+        }
+
+        fn push_byte(&mut self, byte: u8) -> Result<Option<SbusPacket>, SbusError> {
+            // Return an error when the specified byte is pushed
+            if byte == self.error_on_byte {
+                Err(SbusError::InvalidHeader(byte))
+            } else {
+                self.inner.push_byte(byte)
+            }
+        }
+
+        fn push_bytes<'a>(&'a mut self, data: &'a [u8]) -> ErrorStreamingIterator<'a> {
+            ErrorStreamingIterator {
+                parser: self,
+                data,
+                index: 0,
+            }
+        }
+    }
+
+    // Create a custom iterator that uses our ErrorStreamingParser
+    struct ErrorStreamingIterator<'a> {
+        parser: &'a mut ErrorStreamingParser,
+        data: &'a [u8],
+        index: usize,
+    }
+
+    impl<'a> Iterator for ErrorStreamingIterator<'a> {
+        type Item = Result<SbusPacket, SbusError>;
+
+        fn next(&mut self) -> Option<Self::Item> {
+            while self.index < self.data.len() {
+                let byte = self.data[self.index];
+                self.index += 1;
+
+                match self.parser.push_byte(byte) {
+                    Ok(Some(packet)) => return Some(Ok(packet)),
+                    Err(e) => return Some(Err(e)),  // This is the line we want to test
+                    Ok(None) => continue,
+                }
+            }
+            None
+        }
+    }
+
+    // Create our custom parser that will return an error when it sees 0x42
+    let mut parser = ErrorStreamingParser::new(0x42);
+
+    // Create some test data that includes the error-triggering byte
+    let data = [0x0F, 0x01, 0x42, 0x03, 0x04];
+
+    // Collect all results from the iterator
+    let results: Vec<_> = parser.push_bytes(&data).collect();
+
+    // Verify that we got an error and it's the expected type
+    assert_eq!(results.len(), 1);
+    match &results[0] {
+        Err(SbusError::InvalidHeader(byte)) => {
+            assert_eq!(*byte, 0x42);
+        }
+        other => panic!("Expected InvalidHeader error, got {:?}", other),
+    }
+}
