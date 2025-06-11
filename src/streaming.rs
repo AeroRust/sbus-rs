@@ -147,9 +147,7 @@ impl StreamingParser {
                 self.stats.bytes_discarded = self.stats.bytes_discarded.saturating_add(i as u32);
 
                 // Shift data to start of buffer
-                for j in 0..remaining {
-                    self.buffer[j] = self.buffer[i + j];
-                }
+                self.buffer.copy_within(i..self.pos, 0);
                 self.pos = remaining;
                 found = true;
                 break;
