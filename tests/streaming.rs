@@ -320,7 +320,7 @@ fn test_streaming_iterator_error_propagation() {
 
                 match self.parser.push_byte(byte) {
                     Ok(Some(packet)) => return Some(Ok(packet)),
-                    Err(e) => return Some(Err(e)),  // This is the line we want to test
+                    Err(e) => return Some(Err(e)), // This is the line we want to test
                     Ok(None) => continue,
                 }
             }

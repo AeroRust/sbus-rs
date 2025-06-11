@@ -115,8 +115,9 @@ impl StreamingParser {
                 }
             } else {
                 // Invalid frame, need to resync
+                let footer = self.buffer[SBUS_FRAME_LENGTH - 1];
                 self.resync();
-                Ok(None)
+                Err(SbusError::InvalidFooter(footer))
             }
         } else {
             Ok(None)
@@ -272,7 +273,18 @@ mod tests {
 
         // Feed corrupted frame
         for &byte in &frame {
-            parser.push_byte(byte).unwrap();
+            let result = parser.push_byte(byte);
+            // For the last byte (footer), we expect an error
+            if byte == frame[SBUS_FRAME_LENGTH - 1] {
+                assert!(result.is_err());
+                if let Err(SbusError::InvalidFooter(footer)) = result {
+                    assert_eq!(footer, 0xFF);
+                } else {
+                    panic!("Expected InvalidFooter error");
+                }
+            } else {
+                result.unwrap();
+            }
         }
 
         assert_eq!(parser.stats().frames_decoded, 0);
@@ -302,9 +314,12 @@ mod tests {
 
         // Now send complete frame
         let packets: Vec<_> = parser.push_bytes(&frame).collect();
-        assert_eq!(packets.len(), 1);
 
-        let packet = packets[0].as_ref().unwrap();
+        // Filter out error packets - we only care about valid packets
+        let valid_packets: Vec<_> = packets.into_iter().filter(|p| p.is_ok()).collect();
+        assert_eq!(valid_packets.len(), 1);
+
+        let packet = valid_packets[0].as_ref().unwrap();
         assert_eq!(packet.channels[0], 1234);
         assert!(packet.flags.failsafe);
         assert!(packet.flags.frame_lost);
@@ -362,7 +377,18 @@ mod tests {
             parser.push_byte(b).unwrap();
         }
         for &b in &corrupted {
-            parser.push_byte(b).unwrap();
+            let result = parser.push_byte(b);
+            // For the last byte (footer), we expect an error
+            if b == corrupted[SBUS_FRAME_LENGTH - 1] {
+                assert!(result.is_err());
+                if let Err(SbusError::InvalidFooter(footer)) = result {
+                    assert_eq!(footer, 0xFF);
+                } else {
+                    panic!("Expected InvalidFooter error");
+                }
+            } else {
+                result.unwrap();
+            }
         }
         for &b in &valid2 {
             parser.push_byte(b).unwrap();
@@ -380,9 +406,13 @@ mod tests {
         let mut frame = create_test_frame(&[1000; CHANNEL_COUNT], 0);
         frame[SBUS_FRAME_LENGTH - 1] = 0xFF; // corrupt footer (not SBUS_FOOTER)
 
-        // The parser should discard the frame and not return any packets
+        // The parser should return an InvalidFooter error
         let results: Vec<_> = parser.push_bytes(&frame).collect();
-        assert_eq!(results.len(), 0);
+        assert_eq!(results.len(), 1);
+        match &results[0] {
+            Err(SbusError::InvalidFooter(footer)) => assert_eq!(*footer, 0xFF),
+            _ => panic!("Expected InvalidFooter error"),
+        }
 
         // Verify that sync_losses was incremented
         assert_eq!(parser.stats().sync_losses, 1);
