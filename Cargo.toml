@@ -31,10 +31,7 @@ defmt = { version = "0.3", optional = true }
 [dev-dependencies]
 tokio = { version = "1", features = ["full"] }
 embedded-io-adapters = { version = "0.6" }
-criterion = "0.5"
-arbitrary = { version = "1.4.0", features = ["derive"] }
-libfuzzer-sys = "0.4"
-proptest = "1.6"
+criterion = "0.6"
 
 [features]
 default = ["blocking"]

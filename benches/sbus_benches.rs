@@ -1,9 +1,10 @@
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use embedded_io_adapters::std::FromStd;
 use sbus_rs::{
     pack_channels, SbusPacket, SbusParser, CHANNEL_COUNT, CHANNEL_MAX, SBUS_FOOTER,
     SBUS_FRAME_LENGTH, SBUS_HEADER,
 };
+use std::hint::black_box;
 use std::io::Cursor;
 
 const fn generate_alternating() -> [u16; CHANNEL_COUNT] {

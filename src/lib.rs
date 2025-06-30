@@ -43,10 +43,12 @@
 pub use error::*;
 pub use packet::*;
 pub use parser::*;
+pub use streaming::*;
 
 mod error;
 mod packet;
 mod parser;
+mod streaming;
 
 #[inline(always)]
 pub const fn channels_parsing(buffer: &[u8; SBUS_FRAME_LENGTH]) -> [u16; CHANNEL_COUNT] {
