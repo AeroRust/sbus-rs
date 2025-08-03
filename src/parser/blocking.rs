@@ -20,36 +20,11 @@ where
 }
 
 impl<R: Read> Parser<R, Blocking> {
-    /// Asynchronously reads the next complete SBUS frame
-    ///
-    /// # Returns
-    ///
-    /// * `Ok(SbusPacket)` if a valid frame was read
-    /// * `Err(SbusError)` if an error occurred or the frame was invalid
-    pub fn read_frame(&mut self) -> Result<SbusPacket, SbusError> {
-        let mut buffer = [0u8; SBUS_FRAME_LENGTH];
-        self.reader
-            .read_exact(&mut buffer)
-            .map_err(|_| SbusError::ReadError)?;
-
-        SbusPacket::from_array(&buffer)
-    }
-}
-
-/// Parser for reading SBUS frames from a blocking I/O source
-pub struct SbusParser<R>
-where
-    R: Read,
-{
-    reader: R,
-}
-
-impl<R> SbusParser<R>
-where
-    R: Read,
-{
     pub fn new(reader: R) -> Self {
-        Self { reader }
+        Self {
+            reader,
+            _mode: Default::default(),
+        }
     }
 
     /// Reads the next complete SBUS frame
@@ -67,6 +42,8 @@ where
         SbusPacket::from_array(&buffer)
     }
 }
+
+pub type SbusParser<R> = Parser<R, Blocking>;
 
 #[cfg(test)]
 mod tests {
