@@ -7,18 +7,6 @@ pub struct Blocking {}
 impl super::Mode for Blocking {}
 impl super::Sealed for Blocking {}
 
-impl<R, M> Parser<R, M>
-where
-    M: super::Mode,
-{
-    pub fn new_blocking<R1: Read>(reader: R1) -> Parser<R1, Blocking> {
-        Parser {
-            reader,
-            _mode: Default::default(),
-        }
-    }
-}
-
 impl<R: Read> Parser<R, Blocking> {
     pub fn new(reader: R) -> Self {
         Self {
@@ -47,7 +35,6 @@ pub type SbusParser<R> = Parser<R, Blocking>;
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::CHANNEL_MAX;
     use embedded_io_adapters::std::FromStd;
     use std::io::Cursor;

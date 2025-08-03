@@ -5,7 +5,7 @@ use core::marker::PhantomData;
 mod asynch;
 
 #[cfg(feature = "async")]
-pub use asynch::SbusParserAsync;
+pub use asynch::SbusParser;
 
 #[cfg(feature = "blocking")]
 pub mod blocking;

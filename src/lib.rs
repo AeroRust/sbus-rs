@@ -13,6 +13,8 @@
 //! ## Example
 //!
 //! ```rust
+//! #[cfg(feature = "blocking")]
+//! {
 //! use sbus_rs::{SbusParser, SbusPacket};
 //! use embedded_io_adapters::std::FromStd;
 //! use std::io::Cursor;
@@ -29,6 +31,7 @@
 //!         }
 //!     }
 //!     Err(e) => println!("Error reading frame: {:?}", e),
+//! }
 //! }
 //! ```
 //!

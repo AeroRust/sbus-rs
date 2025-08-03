@@ -12,19 +12,13 @@ pub struct Async {}
 impl super::Mode for Async {}
 impl super::Sealed for Async {}
 
-impl<R, M> Parser<R, M>
-where
-    M: super::Mode,
-{
-    pub fn new<R1: Read>(reader: R1) -> Parser<R1, Async> {
-        Parser {
+impl<R: Read> Parser<R, Async> {
+    pub fn new(reader: R) -> Self {
+        Self {
             reader,
             _mode: Default::default(),
         }
     }
-}
-
-impl<R: Read> Parser<R, Async> {
     /// Asynchronously reads the next complete SBUS frame
     ///
     /// # Returns
@@ -42,44 +36,14 @@ impl<R: Read> Parser<R, Async> {
     }
 }
 
-pub struct SbusParserAsync<R>
-where
-    R: Read,
-{
-    reader: R,
-}
-
-impl<R> SbusParserAsync<R>
-where
-    R: Read,
-{
-    pub fn new(reader: R) -> Self {
-        Self { reader }
-    }
-
-    /// Asynchronously reads the next complete SBUS frame
-    ///
-    /// # Returns
-    ///
-    /// * `Ok(SbusPacket)` if a valid frame was read
-    /// * `Err(SbusError)` if an error occurred or the frame was invalid
-    pub async fn read_frame(&mut self) -> Result<SbusPacket, SbusError> {
-        let mut buffer = [0u8; SBUS_FRAME_LENGTH];
-        self.reader
-            .read_exact(&mut buffer)
-            .await
-            .map_err(|_| SbusError::ReadError)?;
-
-        SbusPacket::from_array(&buffer)
-    }
-}
+pub type SbusParser<R> = Parser<R, Async>;
 
 #[cfg(test)]
 mod tests {
-    use std::io::Cursor;
-
-    use crate::parser::asynch::SbusParserAsync;
+    use crate::parser::asynch::SbusParser;
+    use crate::SbusError;
     use embedded_io_adapters::tokio_1::FromTokio;
+    use std::io::Cursor;
 
     const TEST_PACKET: [u8; 25] = [
         0x0F, // HEAD_BYTE
@@ -122,7 +86,7 @@ mod tests {
             0x00, // Footer
         ];
         let cursor = Cursor::new(data);
-        let mut parser = SbusParserAsync::new(FromTokio::new(cursor));
+        let mut parser = SbusParser::new(FromTokio::new(cursor));
 
         let packet = parser.read_frame().await.expect("Should be a valid frame");
 
@@ -141,7 +105,7 @@ mod tests {
         data[24] = 0x50; // Invalid footer
 
         let cursor = Cursor::new(data);
-        let mut parser = SbusParserAsync::new(FromTokio::new(cursor));
+        let mut parser = SbusParser::new(FromTokio::new(cursor));
 
         let result = parser.read_frame().await;
         assert!(matches!(result, Err(SbusError::InvalidFooter(0x50))));
@@ -154,7 +118,7 @@ mod tests {
         data[0] = 0x00; // Invalid header
 
         let cursor = Cursor::new(data);
-        let mut parser = SbusParserAsync::new(FromTokio::new(cursor));
+        let mut parser = SbusParser::new(FromTokio::new(cursor));
 
         let result = parser.read_frame().await;
         assert!(matches!(result, Err(SbusError::InvalidHeader(0x00))));
