@@ -12,7 +12,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - run: cargo test --all-features
+      - run: |
+          cargo test --features blocking,std --bins --tests
+          cargo test --no-default-features --features async,std --bins --tests
 
   publish:
     name: Publish to crates.io
