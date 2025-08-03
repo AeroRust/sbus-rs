@@ -26,7 +26,7 @@ use crate::{SbusError, SbusPacket, SBUS_FOOTER, SBUS_FRAME_LENGTH, SBUS_HEADER};
 /// }
 /// ```
 #[derive(Debug, Clone)]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct StreamingParser {
     /// Buffer to accumulate partial frame data
     buffer: [u8; SBUS_FRAME_LENGTH],
@@ -38,7 +38,7 @@ pub struct StreamingParser {
 
 /// Statistics about the streaming parser's operation
 #[derive(Debug, Clone, Copy, Default)]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct StreamingStats {
     /// Total valid frames decoded
     pub frames_decoded: u32,

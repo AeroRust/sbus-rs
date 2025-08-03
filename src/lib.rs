@@ -1,4 +1,3 @@
-#![cfg_attr(all(not(test), not(feature = "std")), no_std)]
 //! # sbus-rs
 //!
 //! A no_std compatible library for parsing SBUS (Serial Bus) protocol, commonly used in RC (Radio Control) systems.
@@ -13,6 +12,8 @@
 //! ## Example
 //!
 //! ```rust
+//! #[cfg(feature = "blocking")]
+//! {
 //! use sbus_rs::{SbusParser, SbusPacket};
 //! use embedded_io_adapters::std::FromStd;
 //! use std::io::Cursor;
@@ -30,6 +31,7 @@
 //!     }
 //!     Err(e) => println!("Error reading frame: {:?}", e),
 //! }
+//! }
 //! ```
 //!
 //! ## Protocol Details
@@ -39,6 +41,12 @@
 //! - 22 bytes of channel data (16 channels, 11 bits each)
 //! - 1 byte of flags
 //! - End byte (0x00)
+#![no_std]
+
+#[cfg(feature = "std")]
+extern crate std;
+#[cfg(all(feature = "async", feature = "blocking"))]
+compile_error!("Can't have both async and blocking enabled");
 
 pub use error::*;
 pub use packet::*;

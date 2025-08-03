@@ -2,54 +2,17 @@ use crate::{error::SbusError, packet::SbusPacket, parser::SBUS_FRAME_LENGTH, Par
 use embedded_io::Read;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Blocking {}
 impl super::Mode for Blocking {}
 impl super::Sealed for Blocking {}
 
-impl<R, M> Parser<R, M>
-where
-    M: super::Mode,
-{
-    pub fn new_blocking<R1: Read>(reader: R1) -> Parser<R1, Blocking> {
-        Parser {
+impl<R: Read> Parser<R, Blocking> {
+    pub fn new(reader: R) -> Self {
+        Self {
             reader,
             _mode: Default::default(),
         }
-    }
-}
-
-impl<R: Read> Parser<R, Blocking> {
-    /// Asynchronously reads the next complete SBUS frame
-    ///
-    /// # Returns
-    ///
-    /// * `Ok(SbusPacket)` if a valid frame was read
-    /// * `Err(SbusError)` if an error occurred or the frame was invalid
-    pub fn read_frame(&mut self) -> Result<SbusPacket, SbusError> {
-        let mut buffer = [0u8; SBUS_FRAME_LENGTH];
-        self.reader
-            .read_exact(&mut buffer)
-            .map_err(|_| SbusError::ReadError)?;
-
-        SbusPacket::from_array(&buffer)
-    }
-}
-
-/// Parser for reading SBUS frames from a blocking I/O source
-pub struct SbusParser<R>
-where
-    R: Read,
-{
-    reader: R,
-}
-
-impl<R> SbusParser<R>
-where
-    R: Read,
-{
-    pub fn new(reader: R) -> Self {
-        Self { reader }
     }
 
     /// Reads the next complete SBUS frame
@@ -68,10 +31,11 @@ where
     }
 }
 
+pub type SbusParser<R> = Parser<R, Blocking>;
+
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::CHANNEL_MAX;
+    use crate::{SbusError, SbusParser, CHANNEL_MAX};
     use embedded_io_adapters::std::FromStd;
     use std::io::Cursor;
 

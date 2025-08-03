@@ -17,7 +17,7 @@ jobs:
     name: ${{ matrix.target }}
     strategy:
       matrix:
-        target: [thumbv7m-none-eabi, aarch64-unknown-none] # Could add more targets if needed
+        target: [thumbv7m-none-eabi, aarch64-unknown-none]  # Could add more targets if needed
     steps:
       - uses: actions/checkout@v4
         with:
@@ -26,6 +26,9 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
       - name: rustup target add ${{ matrix.target }}
         run: rustup target add ${{ matrix.target }}
-      - name: cargo check
-        run: cargo check --target ${{ matrix.target }} --features="async,blocking"
-
+      - name: cargo check (no features)
+        run: cargo check --target ${{ matrix.target }} --no-default-features
+      - name: cargo check (blocking)
+        run: cargo check --target ${{ matrix.target }} --features="blocking"
+      - name: cargo check (async)
+        run: cargo check --target ${{ matrix.target }} --no-default-features --features="async"
