@@ -4,7 +4,7 @@ use crate::{
 
 /// Represents a complete SBUS packet with channel data and flags
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct SbusPacket {
     pub channels: [u16; 16],
     pub flags: Flags,
@@ -48,7 +48,7 @@ impl SbusPacket {
 
 /// Status flags contained in an SBUS frame
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Flags {
     pub d1: bool,
     pub d2: bool,

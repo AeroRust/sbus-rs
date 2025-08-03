@@ -26,12 +26,12 @@ all-features = true
 embedded-io = { version = "0.6", optional = true }
 embedded-io-async = { version = "0.6", optional = true }
 
-defmt = { version = "0.3", optional = true }
+defmt = { version = "1.0", optional = true }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full"] }
 embedded-io-adapters = { version = "0.6" }
-criterion = "0.6"
+criterion = "0.7"
 
 [features]
 default = ["blocking"]
@@ -41,4 +41,4 @@ std = []
 blocking = ["dep:embedded-io", "embedded-io-adapters/std"]
 async = ["dep:embedded-io-async", "embedded-io-adapters/tokio-1"]
 
-defmt-03 = ["dep:defmt"]
+defmt = ["dep:defmt"]

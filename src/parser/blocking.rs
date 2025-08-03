@@ -2,7 +2,7 @@ use crate::{error::SbusError, packet::SbusPacket, parser::SBUS_FRAME_LENGTH, Par
 use embedded_io::Read;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Blocking {}
 impl super::Mode for Blocking {}
 impl super::Sealed for Blocking {}

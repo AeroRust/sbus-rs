@@ -7,7 +7,7 @@ use crate::{
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "defmt-03", derive(defmt::Format))]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Async {}
 impl super::Mode for Async {}
 impl super::Sealed for Async {}
@@ -78,7 +78,6 @@ where
 mod tests {
     use std::io::Cursor;
 
-    use super::*;
     use crate::parser::asynch::SbusParserAsync;
     use embedded_io_adapters::tokio_1::FromTokio;
 
