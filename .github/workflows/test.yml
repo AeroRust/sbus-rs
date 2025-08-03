@@ -38,11 +38,19 @@ jobs:
         if: hashFiles('Cargo.lock') == ''
         run: cargo generate-lockfile
       # https://twitter.com/jonhoo/status/1571290371124260865
-      - name: cargo test --locked
-        run: cargo test --locked --all-features --all-targets
+      # Test with blocking features (default)
+      - name: cargo test --locked (blocking)
+        run: cargo test --locked --features blocking,std --bins --tests
+      # Test with async features
+      - name: cargo test --locked (async)
+        run: cargo test --locked --no-default-features --features async,std --bins --tests
       # https://github.com/rust-lang/cargo/issues/6669
-      - name: cargo test --doc
-        run: cargo test --locked --all-features --doc
+      # Test docs with blocking features (default)
+      - name: cargo test --doc (blocking)
+        run: cargo test --locked --features blocking,std --doc
+      # Test docs with async features
+      - name: cargo test --doc (async)
+        run: cargo test --locked --no-default-features --features async,std --doc
   os-check:
     # run cargo test on mac and windows
     runs-on: ${{ matrix.os }}
@@ -66,8 +74,10 @@ jobs:
       - name: cargo generate-lockfile
         if: hashFiles('Cargo.lock') == ''
         run: cargo generate-lockfile
-      - name: cargo test
-        run: cargo test --locked --all-targets
+      - name: cargo test (blocking)
+        run: cargo test --locked --features blocking,std --bins --tests
+      - name: cargo test (async)
+        run: cargo test --locked --no-default-features --features async,std --bins --tests
   regression:
     runs-on: ubuntu-latest
     name: regression / stable
@@ -82,7 +92,8 @@ jobs:
 
       - name: Check proptest regressions
         run: |
-          cargo test --all-features -- --include-ignored
+          cargo test --features blocking,std -- --include-ignored
+          cargo test --no-default-features --features async,std -- --include-ignored
   coverage:
     # use llvm-cov to build and collect coverage and outputs in a format that
     # is compatible with codecov.io
@@ -121,7 +132,11 @@ jobs:
         if: hashFiles('Cargo.lock') == ''
         run: cargo generate-lockfile
       - name: cargo llvm-cov
-        run: cargo llvm-cov --locked --all-features --lcov --output-path lcov.info
+        run: |
+          cargo llvm-cov --locked --features blocking,std --lcov --output-path lcov-blocking.info
+          cargo llvm-cov --locked --no-default-features --features async,std --lcov --output-path lcov-async.info
+          # Merge coverage reports
+          cargo llvm-cov --no-run --lcov --output-path lcov.info
       - name: Record Rust version
         run: echo "RUST=$(rustc --version)" >> "$GITHUB_ENV"
       - name: Upload to codecov.io

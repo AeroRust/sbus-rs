@@ -8,7 +8,7 @@ on:
     branches: [main]
   pull_request:
   schedule:
-    - cron:  '7 7 * * *'
+    - cron: '7 7 * * *'
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
@@ -27,8 +27,10 @@ jobs:
       - name: cargo generate-lockfile
         if: hashFiles('Cargo.lock') == ''
         run: cargo generate-lockfile
-      - name: cargo test --locked
-        run: cargo test --locked --all-features --all-targets
+      - name: cargo test --locked (blocking)
+        run: cargo test --locked --features blocking,std --bins --tests
+      - name: cargo test --locked (async)
+        run: cargo test --locked --no-default-features --features async,std --bins --tests
   # https://twitter.com/alcuadrado/status/1571291687837732873
   update:
     # This action checks that updating the dependencies of this crate to the latest available that
@@ -51,8 +53,11 @@ jobs:
       - name: cargo update
         if: hashFiles('Cargo.lock') != ''
         run: cargo update
-      - name: cargo test
+      - name: cargo test (blocking)
         if: hashFiles('Cargo.lock') != ''
-        run: cargo test --locked --all-features --all-targets
+        run: cargo test --locked --features blocking,std --bins --tests
+      - name: cargo test (async)
+        if: hashFiles('Cargo.lock') != ''
+        run: cargo test --locked --no-default-features --features async,std --bins --tests
         env:
           RUSTFLAGS: -D deprecated

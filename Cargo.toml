@@ -20,7 +20,7 @@ name = "sbus_benches"
 harness = false
 
 [package.metadata.docs.rs]
-all-features = true
+features = ["blocking", "defmt", "std"]
 
 [dependencies]
 embedded-io = { version = "0.6", optional = true }

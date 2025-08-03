@@ -35,7 +35,7 @@ pub type SbusParser<R> = Parser<R, Blocking>;
 
 #[cfg(test)]
 mod tests {
-    use crate::CHANNEL_MAX;
+    use crate::{SbusError, SbusParser, CHANNEL_MAX};
     use embedded_io_adapters::std::FromStd;
     use std::io::Cursor;
 
