@@ -43,6 +43,7 @@
 //! - End byte (0x00)
 #![no_std]
 
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
 #[cfg(feature = "std")]
 extern crate std;
 #[cfg(all(feature = "async", feature = "blocking"))]
