@@ -1,6 +1,4 @@
-use crate::{
-    channels_parsing, SbusError, SBUS_FOOTER, SBUS_FOOTER_2, SBUS_FRAME_LENGTH, SBUS_HEADER,
-};
+use crate::{channels_parsing, valid_footer, SbusError, SBUS_FRAME_LENGTH, SBUS_HEADER};
 
 /// Represents a complete SBUS packet with channel data and flags
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -38,7 +36,7 @@ impl SbusPacket {
         // Check header and footer
         if header != SBUS_HEADER {
             Err(SbusError::InvalidHeader(header))
-        } else if footer != SBUS_FOOTER && footer & 0x0F != SBUS_FOOTER_2 {
+        } else if !valid_footer(footer) {
             Err(SbusError::InvalidFooter(footer))
         } else {
             Ok(())

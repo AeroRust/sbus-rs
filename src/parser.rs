@@ -28,6 +28,11 @@ pub const SBUS_HEADER: u8 = 0x0F;
 /// The SBus Frame footer should end with a zero byte `0x00` (0 decimal).
 pub const SBUS_FOOTER: u8 = 0x00;
 pub const SBUS_FOOTER_2: u8 = 0x04;
+
+pub const fn valid_footer(footer: u8) -> bool {
+    footer == SBUS_FOOTER || footer & 0x0F == SBUS_FOOTER_2
+}
+
 /// The SBus Frame length
 pub const SBUS_FRAME_LENGTH: usize = 25;
 /// The number of channels in a SBus Frame.

@@ -1,5 +1,5 @@
 //! Streaming parser for SBUS frames that can handle partial data
-use crate::{SbusError, SbusPacket, SBUS_FOOTER, SBUS_FRAME_LENGTH, SBUS_HEADER};
+use crate::{valid_footer, SbusError, SbusPacket, SBUS_FRAME_LENGTH, SBUS_HEADER};
 
 /// A streaming parser that accumulates bytes until a complete SBUS frame is decoded
 ///
@@ -100,7 +100,7 @@ impl StreamingParser {
         // Check if we have a complete frame
         if self.pos == SBUS_FRAME_LENGTH {
             // Validate footer
-            if self.buffer[SBUS_FRAME_LENGTH - 1] == SBUS_FOOTER {
+            if valid_footer(self.buffer[SBUS_FRAME_LENGTH - 1]) {
                 // Valid frame!
                 match SbusPacket::from_array(&self.buffer) {
                     Ok(packet) => {
@@ -191,7 +191,7 @@ impl<'a> Iterator for StreamingIterator<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{pack_channels, CHANNEL_COUNT, CHANNEL_MAX};
+    use crate::{pack_channels, CHANNEL_COUNT, CHANNEL_MAX, SBUS_FOOTER};
     extern crate alloc;
     use alloc::vec::Vec;
 
